@@ -22,3 +22,10 @@
 
 pub mod token;
 pub mod env;
+pub mod module;
+
+// The mod for parser
+pub mod parse {
+    pub fn parse_file(file_content: String) {
+    }
+}

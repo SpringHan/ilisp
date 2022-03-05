@@ -39,5 +39,5 @@ pub enum LispType<'a> {
     ThrowValue(&'a str, Box<LispType<'a>>)
 }
 
-// impl LispType {
-// }
+impl<'a> LispType<'a> {
+}
