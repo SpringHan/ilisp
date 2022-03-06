@@ -22,5 +22,17 @@
 
 mod eval;
 
+use eval::module;
+
 fn main() {
+    module::LispLibrary::new("std", "");
+    let a = module::LispLibrary::find("std");
+    match a {
+        Some(b) => println!("{}", b.get_prop(true)),
+        None => ()
+    }
+    let mut c: Vec<eval::token::LispToken> = Vec::new();
+    c.push(eval::token::LispToken::new("a", 0, 0, false));
+    module::LispModule::new("std", "main", "", true, c);
+    println!("{:?}", read_module!("std::haha::c"));
 }

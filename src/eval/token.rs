@@ -33,11 +33,32 @@ pub enum LispTokenType<'a> {
 pub struct LispToken<'a> {
     car: &'a str,
     value: LispTokenType<'a>,
-    prefix: bool,
+    prefix: bool,               // If the car is a prefix alias
     line: u16
 }
 
 pub enum LispTokens<'a> {
     EmptyToken,
     Tokens(Vec<LispToken<'a>>)
+}
+
+impl<'a> LispToken<'a> {
+    pub fn new(_car: &str, _type: u8, line_num: u16, is_prefix: bool) -> LispToken {
+        use self::LispTokenType::*;
+
+        let child_value = match _type {
+            0 => EmptyCons,
+            1 => ArguType(0),
+            2 => Cons(HashMap::new(), HashMap::new(), Vec::new()),
+            3 => Property(HashMap::new(), HashMap::new(), Vec::new()),
+            _ => panic!("The type of token's value is error!")
+        };
+
+        LispToken{
+            car: _car,
+            value: child_value,
+            prefix: is_prefix,
+            line: line_num
+        }
+    }
 }

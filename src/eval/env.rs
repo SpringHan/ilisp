@@ -38,6 +38,3 @@ pub enum LispType<'a> {
     Import(String),
     ThrowValue(&'a str, Box<LispType<'a>>)
 }
-
-impl<'a> LispType<'a> {
-}
