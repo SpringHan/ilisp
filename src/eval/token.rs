@@ -38,8 +38,9 @@ pub struct LispToken<'a> {
 }
 
 pub enum LispTokens<'a> {
-    EmptyToken,
-    Tokens(Vec<LispToken<'a>>)
+    EmptyToken,                 // For storation after executing all the files
+    Tokens(Vec<LispToken<'a>>),
+    Error(String, u16)          // For syntax bug report. `String` is the error message, `u16` is the line number.
 }
 
 impl<'a> LispToken<'a> {

@@ -129,8 +129,8 @@ impl<'a> LispModule<'a> {
     }
 
     // Tokens
-    // Change LispToken to EmptyToken. This function should be used after the tokens of a file have been executed.
-    // `name` is the module's name, like "std::main"
+    /// Change LispToken to EmptyToken. This function should be used after the tokens of a file have been executed.
+    /// `name` is the module's name, like "std::main"
     pub fn clear_token(name: &str) {
     }
 
@@ -144,10 +144,11 @@ impl<'a> LispModule<'a> {
     }
 }
 
-// The macro is used for convert module string like: "std::main" into Vector includes lib, module & other things.
-// "std::a::c" => ["std", "a", "c"]
+/// The macro is used for convert module string like: "std::main" into Vector includes lib, module & other things.
+/// Example
+/// "std::a::c" => ["std", "a", "c"]
 #[macro_export]
-macro_rules! read_module {
+macro_rules! module_split_string {
     ($s:expr) => {
         {
             $s.split("::").collect::<Vec<&str>>()

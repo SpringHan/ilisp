@@ -34,5 +34,7 @@ fn main() {
     let mut c: Vec<eval::token::LispToken> = Vec::new();
     c.push(eval::token::LispToken::new("a", 0, 0, false));
     module::LispModule::new("std", "main", "", true, c);
-    println!("{:?}", read_module!("std::haha::c"));
+    // eval::parse::parse("(defalias #' func)\n(print \"haha\"\n)".to_string());
+    // eval::parse::parse("(print '(a 'a))".to_string());
+    // TODO: The next next step: Add repl & builtin functions
 }
