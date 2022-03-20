@@ -67,32 +67,27 @@ pub mod parse {
     }
 
     /// Build token. Used to traveral the `result_list` convert String token to LispToken.
+    /// Then return the complete token & current line number.
     // TODO: Finish token building.
-    fn build_token(result_list: &Vec<String>) -> token::LispToken {
-        let mut token_result: Vec<token::LispToken> = Vec::new();
-        let mut focusing_a_token = false; // Whether now is editing a certain token.
+    fn build_token(result_list: &Vec<String>, _line: u16) -> (token::LispToken, u16) {
+        // let mut focusing_a_token = false; // Whether now is editing a certain token.
+        let mut result_token: token::LispToken;
         let mut new_token_type = 0; // Current token type.
-        let mut current_line = 1;
+        let mut is_empty_result = true;
+        let mut index = 0;
+        let mut line = _line;
         for token in result_list.iter() {
             match token {
-                a if a == "\n" => current_line += 1,
-                b if b == "(" => new_token_type = 3,
-                c if c == "[" => new_token_type = 4,
-                item => {
-                    if new_token_type != 0 {
-                        token_result.push(token::LispToken::new(
-                            &item,
-                            if new_token_type == 3 && item == ")" {
-                                0
-                            } else {
-                                new_token_type - 1
-                            },
-                            current_line,
-                            item.starts_with("^")
-                        ))
+                start if start == "(" || start == "[" => {
+                    if is_empty_result {
+                        is_empty_result = false;
+                        new_token_type = if start == "(" { 3 } else { 4 };
+                    } else {
+                        let child_token = build_token(result_list.get(index..).unwrap(), line);
                     }
-                }
+                },
             }
+            index += 1;
         }
     }
 
@@ -186,8 +181,18 @@ pub mod parse {
         // println!("{:?}", read_result);
 
         // Secondly, Build up token
+        let mut token_result: Vec<token::LispToken> = Vec::new();
+        let mut current_line = 1;
+        for i in 0..read_result.len() {
+            let new_token_result = build_token(read_result.get(i..).unwrap(), current_line);
+            let new_token = new_token_result.0;
+            current_line = new_token_result.1; // Update line number
+            token_result.push(new_token);
+        }
+
+        // token::LispTokens::Tokens(token_result)
 
         // Debug
-        // token::LispTokens::EmptyToken
+        token::LispTokens::EmptyToken
     }
 }

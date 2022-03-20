@@ -62,4 +62,38 @@ impl<'a> LispToken<'a> {
             line: line_num
         }
     }
+
+    fn get_length(&self) -> u8 {
+        match self.value {
+            LispTokenType::Cons(item1, item2, _) | LispTokenType::Property(item1, item2, _) => {
+                (item1.len() + item2.len()).try_into().unwrap()
+            },
+            _ => panic!("Failed to get the length of a item which has no child elements!")
+        }
+    }
+
+    /// Append `_value_str` or `_value_token` into the value of `LispToken`.
+    /// When `starts_new_line` is true, add it into the Vector which is used to represent the newline
+    pub fn append_element(&self, _value_str: &'a str, _value_token: LispTokens<'a>, starts_new_line: bool) -> Result<(), ()> {
+        match self.value {
+            LispTokenType::Cons(ref mut item1, ref mut item2, ref mut item3)|
+            LispTokenType::Property(ref mut item1, ref mut item2, ref mut item3) => {
+                let new_index = self.get_length();
+                match _value_token {
+                    LispTokens::EmptyToken => {
+                        item1.insert(new_index + 1, _value_str);
+                    },
+                    LispTokens::Tokens(t) => {
+                        item2.insert(new_index + 1, Box::new(t[0]));
+                    }
+                }
+                if starts_new_line {
+                    item3.push(new_index);
+                }
+                Ok(())
+            },
+
+            _ => Err(())
+        }
+    }
 }
