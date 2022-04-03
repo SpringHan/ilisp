@@ -22,29 +22,33 @@
 
 use std::collections::HashMap;
 
+pub enum ParseTokenType {
+    String,
+    Symbol,
+    Number
+}
+
 // The mutiple types of every token.
 pub enum LispTokenType<'a> {
     EmptyCons,
     ArguType(u8),              // For the type of function's argument
-    Cons(HashMap<u8, &'a str>, HashMap<u8, Box<LispToken<'a>>>, Vec<u8>),
-    Property(HashMap<u8, &'a str>, HashMap<u8, Box<LispToken<'a>>>, Vec<u8>)
+    Cons(HashMap<u8, (&'a str, ParseTokenType)>, HashMap<u8, Box<LispToken<'a>>>, Vec<u8>),
+    Property(HashMap<u8, (&'a str, ParseTokenType)>, HashMap<u8, Box<LispToken<'a>>>, Vec<u8>)
 }
 
 pub struct LispToken<'a> {
-    car: &'a str,
     value: LispTokenType<'a>,
-    prefix: bool,               // If the car is a prefix alias
+    quoted: bool,
     line: u16
 }
 
 pub enum LispTokens<'a> {
     EmptyToken,                 // For storation after executing all the files
-    Tokens(Vec<LispToken<'a>>),
-    Error(String, u16)          // For syntax bug report. `String` is the error message, `u16` is the line number.
+    Tokens(Vec<LispToken<'a>>)
 }
 
 impl<'a> LispToken<'a> {
-    pub fn new(_car: &str, _type: u8, line_num: u16, is_prefix: bool) -> LispToken {
+    pub fn new(_type: u8, line_num: u16) -> LispToken<'a> {
         use self::LispTokenType::*;
 
         let child_value = match _type {
@@ -55,10 +59,9 @@ impl<'a> LispToken<'a> {
             _ => panic!("The type of token's value is error!")
         };
 
-        LispToken{
-            car: _car,
+        LispToken {
             value: child_value,
-            prefix: is_prefix,
+            quoted: false,
             line: line_num
         }
     }
@@ -72,9 +75,20 @@ impl<'a> LispToken<'a> {
         }
     }
 
+    /// Set the quoted property of current token to true.
+    // Used in (quote)
+    pub fn set_to_quoted(&mut self) {
+        self.quoted = true;
+    }
+
+    /// Change current Cons to EmptyCons.
+    pub fn cons_to_empty(&mut self) {
+        self.value = LispTokenType::EmptyCons;
+    }
+
     /// Append `_value_str` or `_value_token` into the value of `LispToken`.
     /// When `starts_new_line` is true, add it into the Vector which is used to represent the newline
-    pub fn append_element(&self, _value_str: &'a str, _value_token: LispTokens<'a>, starts_new_line: bool) -> Result<(), ()> {
+    pub fn append_element(&mut self, _value_str: (&'a str, ParseTokenType), _value_token: LispTokens<'a>, starts_new_line: bool) -> Result<(), ()> {
         match self.value {
             LispTokenType::Cons(ref mut item1, ref mut item2, ref mut item3)|
             LispTokenType::Property(ref mut item1, ref mut item2, ref mut item3) => {

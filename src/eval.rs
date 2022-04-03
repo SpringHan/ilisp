@@ -27,10 +27,11 @@ pub mod module;
 // The mod for parser
 pub mod parse {
     use super::token;
+
     pub fn parse_file(file_content: String) {
     }
 
-    /// The function to check if `token` is a legal name for Lisp.
+    /// The function to check if `token` is a legal name for Lisp variable.
     pub fn is_legal_name(token: &String) -> bool {
         for c in token.chars() {
             match c {
@@ -40,6 +41,25 @@ pub mod parse {
         }
 
         true
+    }
+
+    /// Get the type of `token`.
+    fn get_token_type(token: &String) -> token::ParseTokenType {
+        if token.starts_with("\"") {
+            token::ParseTokenType::String
+        } else {
+            let mut has_number = false;
+            let mut has_other_thing = false;
+
+            for c in token.chars() {
+                match c {
+                    '0'..='9' => (),
+                    _ => { return token::ParseTokenType::Symbol }
+                }
+            }
+
+            token::ParseTokenType::Number
+        }
     }
 
     // The function for calculating the line number of syntax error.
@@ -74,25 +94,32 @@ pub mod parse {
         let mut result_token: token::LispToken;
         let mut new_token_type = 0; // Current token type.
         let mut is_empty_result = true;
-        let mut index = 0;
+        let mut index: usize = 0;
         let mut line = _line;
-        for token in result_list.iter() {
+        let length = result_list.len();
+
+        while index <= length {
+            let token = result_list.get(index).unwrap();
             match token {
                 start if start == "(" || start == "[" => {
                     if is_empty_result {
                         is_empty_result = false;
                         new_token_type = if start == "(" { 3 } else { 4 };
+                        result_token = token::LispToken::new(new_token_type - 1, line);
+                        index += 1;
                     } else {
                         let child_token = build_token(result_list.get(index..).unwrap(), line);
                     }
                 },
+
+                _ => {
+                }
             }
-            index += 1;
         }
     }
 
     /// The parse function for parse the code in String to LispTokens.
-    pub fn parse<'a>(code: String) -> token::LispTokens<'a> {
+    pub fn parse<'a>(code: String) -> Result<token::LispTokens<'a>, (String, u16)> {
         // First, convert code into String vector.
         let special_pair_p = |string: &str| -> bool {
             match string {
@@ -112,10 +139,14 @@ pub mod parse {
                 },
 
                 ";" => {
-                    if !current_reading.is_empty() {
-                        read_result.push(current_reading);
+                    if current_reading.starts_with("\"") {
+                        current_reading.push_str(";");
+                    } else {
+                        if !current_reading.is_empty() {
+                            read_result.push(current_reading);
+                        }
+                        current_reading = ";".to_string();
                     }
-                    current_reading = ";".to_string();
                 },
 
                 "\"" => {
@@ -130,23 +161,14 @@ pub mod parse {
 
                 // For the contactor like '(', ')', '[', ']'
                 special if special_pair_p(special) => {
-                    if current_reading.starts_with("\"") {
-                        current_reading.push_str(special);
-                    } else {
-                        if !current_reading.is_empty() {
-                            if special == "(" || special == "[" {
-                                if is_legal_name(&current_reading) {
-                                    return token::LispTokens::Error(
-                                        String::from("Can't connect variable with contactor!"),
-                                        calc_current_line(&read_result)
-                                    )
-                                } else { // Get prefix function
-                                    current_reading.insert_str(0, "^");
-                                }
-                            }
+                    if !current_reading.is_empty() {
+                        if current_reading.starts_with("\"") {
+                            current_reading.push_str(special.to_string());
+                        } else {
                             read_result.push(current_reading);
                             current_reading = "".to_string();
                         }
+                    } else {
                         read_result.push(special.to_string());
                     }
                 },
@@ -161,21 +183,24 @@ pub mod parse {
                 },
 
                 others => {
-                    if !current_reading.is_empty() &&
-                        !current_reading.starts_with("\"") &&
-                        !is_legal_name(&current_reading) &&
-                        is_legal_name(&others.to_string()) { // The conditions for get prefix function
-                            current_reading.insert_str(0, "^");
-                            read_result.push(current_reading);
-                            current_reading = "".to_string();
-                        }
+                    // if !current_reading.is_empty() &&
+                    //     !current_reading.starts_with("\"") &&
+                    //     !is_legal_name(&current_reading) &&
+                    //     is_legal_name(&others.to_string()) { // The conditions for get prefix function
+                    //         current_reading.insert_str(0, "^");
+                    //         read_result.push(current_reading);
+                    //         current_reading = "".to_string();
+                    //     }
                     current_reading.push_str(others);
                 }
             }
         }
 
+        if !current_reading.is_empty() {
+        }
+
         if read_result.is_empty() {
-            return token::LispTokens::EmptyToken
+            return Ok(token::LispTokens::EmptyToken)
         }
 
         // println!("{:?}", read_result);
@@ -190,9 +215,9 @@ pub mod parse {
             token_result.push(new_token);
         }
 
-        // token::LispTokens::Tokens(token_result)
+        // Ok(token::LispTokens::Tokens(token_result))
 
         // Debug
-        token::LispTokens::EmptyToken
+        Ok(token::LispTokens::EmptyToken)
     }
 }

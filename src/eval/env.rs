@@ -22,19 +22,14 @@
 
 use super::token::LispToken;
 
-pub enum LispFunctionType<'a> {
-    Builtin(fn(LispToken<'a>) -> LispType<'a>, u8),
-    Lisp(LispToken<'a>)
-}
-
 pub enum LispType<'a> {
     Symbol(String),
     Boolean(bool),
     Number(String),
-    LString(String),
+    LispString(String),
     Cons(Vec<LispToken<'a>>), // Maybe it should be replaced
-    Function(LispFunctionType<'a>, bool),   // The second argument is to check whether it's a func or macro
-    Ref(String),
+    BuiltinFunction(fn(LispToken<'a>) -> LispType<'a>, i8, bool),
     Import(String),
+    Lifetime(bool, usize, String), // The Type for lifetime. The first element is whether the owner of this lifetime is a permanent variable in current module.
     ThrowValue(&'a str, Box<LispType<'a>>)
 }
