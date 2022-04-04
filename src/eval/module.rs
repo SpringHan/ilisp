@@ -31,17 +31,18 @@ pub struct LispModuleBasic<T> {
     private: T
 }
 
-pub struct LispModule<'a> {
-    basic: LispModuleBasic<HashMap<String, super::env::LispType<'a>>>,
+pub struct LispModule {
+    basic: LispModuleBasic<HashMap<String, super::env::LispType>>,
     modules: Vec<String>,
-    tokens: super::token::LispTokens<'a>
+    tokens: super::token::LispTokens
 }
 
-pub struct LispLibrary<'a> {
-    basic: LispModuleBasic<Vec<LispModule<'a>>>
+pub struct LispLibrary {
+    basic: LispModuleBasic<Vec<LispModule>>
 }
 
-impl<'a> LispLibrary<'a> {
+impl LispLibrary {
+    /// New for LISP_MODULES.
     pub fn new(_name: &str, def: &str) {
         unsafe {
             LISP_MODULES.push(LispLibrary{
@@ -89,15 +90,15 @@ impl<'a> LispLibrary<'a> {
     }
 }
 
-impl<'a> LispModule<'a> {
+impl LispModule {
     pub fn new(_lib: &'static str, _name: &str, def: &str, is_private: bool,
-               tokens: Vec<super::token::LispToken<'static>> ) -> Result<(), &'a str> {
+               tokens: Vec<super::token::LispToken> ) -> Result<(), String> {
         let lib = LispLibrary::get(_lib);
         match lib {
-            None => Err("The library is not exists!"),
+            None => Err("The library is not exists!".to_string()),
             Some(paren_lib) => {
-                let new_module = LispModule{
-                    basic: LispModuleBasic{
+                let new_module = LispModule {
+                    basic: LispModuleBasic {
                         name: _name.to_string(),
                         definition: def.to_string(),
                         public: HashMap::new(),
@@ -108,12 +109,11 @@ impl<'a> LispModule<'a> {
                     // Debug
                     // tokens: super::token::LispTokens::EmptyToken
                 };
-                unsafe {
-                    if is_private {
-                        paren_lib.basic.private.push(new_module);
-                    } else {
-                        paren_lib.basic.public.push(new_module);
-                    }
+
+                if is_private {
+                    paren_lib.basic.private.push(new_module);
+                } else {
+                    paren_lib.basic.public.push(new_module);
                 }
                 Ok(())
             }
@@ -147,11 +147,6 @@ impl<'a> LispModule<'a> {
 /// The macro is used for convert module string like: "std::main" into Vector includes lib, module & other things.
 /// Example
 /// "std::a::c" => ["std", "a", "c"]
-#[macro_export]
-macro_rules! module_split_string {
-    ($s:expr) => {
-        {
-            $s.split("::").collect::<Vec<&str>>()
-        }
-    }
+pub fn module_split_string(module_string: &String) -> Vec<&str> {
+    module_string.split("::").collect()
 }

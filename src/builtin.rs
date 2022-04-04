@@ -1,4 +1,4 @@
-// This file is the basic definitions about Environment.
+// Lisp Builtin functions.
 
 // Copyright (c) 2022 SpringHan
 
@@ -20,17 +20,27 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 // OR OTHER DEALINGS IN THE SOFTWARE.
 
-use super::token::LispToken;
+use std::collections::HashMap;
+use super::eval::env::LispType;
+use super::eval::token::LispToken;
 
-pub enum LispType {
-    Symbol(String),
-    Boolean(bool),
-    Number(String),
-    LispString(String),
-    Cons(Box<Vec<LispToken>>), // Maybe it should be replaced
-    Macro(Box<Vec<LispToken>>), // Expansible macro
-    BuiltinFunction(fn(LispToken) -> LispType, i8, bool),
-    Import(String),
-    Lifetime(bool, usize, String), // The Type for lifetime. The first element is whether the owner of this lifetime is a permanent variable in current module.
-    ThrowValue(String, Box<LispType>)
+// BUG: Solve problem that make initialize of hashmap a const function.
+// static mut LISP_BUILDTIN: HashMap<String, LispType> = hash_init();
+
+// const fn hash_init() -> HashMap<String, LispType> {
+//     HashMap::new()
+// }
+
+fn append_env<'a>(name: &'a str, env: LispType) {
+    unsafe {
+        LISP_BUILDTIN.insert(name.to_string(), env);
+    }
+}
+
+/// Initialize builtins.
+pub fn builtin_init() {
+    // append_env("defn", LispType::BuiltinFunction());
+    // append_env("defmacro", LispType::BuiltinFunction());
+    // append_env("print", LispType::BuiltinFunction(|token: LispToken| -> LispType {
+    // }))
 }

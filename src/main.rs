@@ -20,7 +20,8 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 // OR OTHER DEALINGS IN THE SOFTWARE.
 
-mod eval;
+pub mod eval;
+pub mod builtin;
 
 use eval::module;
 
@@ -31,10 +32,13 @@ fn main() {
         Some(b) => println!("{}", b.get_prop(true)),
         None => ()
     }
-    let mut c: Vec<eval::token::LispToken> = Vec::new();
-    c.push(eval::token::LispToken::new("a", 0, 0, false));
-    module::LispModule::new("std", "main", "", true, c);
+    // let mut c: Vec<eval::token::LispToken> = Vec::new();
+    // c.push(eval::token::LispToken::new("a", 0, 0, false));
+    // module::LispModule::new("std", "main", "", true, c);
     // eval::parse::parse("(defalias #' func)\n(print \"haha\"\n)".to_string());
     // eval::parse::parse("(print '(a 'a))".to_string());
     // TODO: The next next step: Add repl & builtin functions
+    // let mut c: Vec<eval::token::LispToken> = Vec::new();
+    let c = eval::parse::parse("(print '(a 'b))".to_string());
+    println!("{:?}", c);
 }

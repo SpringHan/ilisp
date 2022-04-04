@@ -1,4 +1,4 @@
-// This file is the basic definitions about Environment.
+// Repl feature file.
 
 // Copyright (c) 2022 SpringHan
 
@@ -20,17 +20,6 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 // OR OTHER DEALINGS IN THE SOFTWARE.
 
-use super::token::LispToken;
-
-pub enum LispType {
-    Symbol(String),
-    Boolean(bool),
-    Number(String),
-    LispString(String),
-    Cons(Box<Vec<LispToken>>), // Maybe it should be replaced
-    Macro(Box<Vec<LispToken>>), // Expansible macro
-    BuiltinFunction(fn(LispToken) -> LispType, i8, bool),
-    Import(String),
-    Lifetime(bool, usize, String), // The Type for lifetime. The first element is whether the owner of this lifetime is a permanent variable in current module.
-    ThrowValue(String, Box<LispType>)
+/// Start repl.
+pub fn repl_start() {
 }

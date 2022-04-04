@@ -20,8 +20,7 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 // OR OTHER DEALINGS IN THE SOFTWARE.
 
-use std::collections::HashMap;
-
+#[derive(Debug)]
 pub enum ParseTokenType {
     String,
     Symbol,
@@ -29,47 +28,65 @@ pub enum ParseTokenType {
 }
 
 // The mutiple types of every token.
-pub enum LispTokenType<'a> {
+#[derive(Debug)]
+pub enum LispTokenType {
     EmptyCons,
+    SoloEle(String, ParseTokenType, u16),
     ArguType(u8),              // For the type of function's argument
-    Cons(HashMap<u8, (&'a str, ParseTokenType)>, HashMap<u8, Box<LispToken<'a>>>, Vec<u8>),
-    Property(HashMap<u8, (&'a str, ParseTokenType)>, HashMap<u8, Box<LispToken<'a>>>, Vec<u8>)
+    Cons(Vec<Box<LispToken>>),
+    Property(Vec<Box<LispToken>>)
 }
 
-pub struct LispToken<'a> {
-    value: LispTokenType<'a>,
-    quoted: bool,
-    line: u16
+#[derive(Debug)]
+pub struct LispToken {
+    value: LispTokenType,
+    quoted: bool
 }
 
-pub enum LispTokens<'a> {
+#[derive(Debug)]
+pub enum LispTokens {
     EmptyToken,                 // For storation after executing all the files
-    Tokens(Vec<LispToken<'a>>)
+    Tokens(Vec<LispToken>)
 }
 
-impl<'a> LispToken<'a> {
-    pub fn new(_type: u8, line_num: u16) -> LispToken<'a> {
+impl LispToken {
+
+    /// The function for initialize the token variale.
+    pub fn init() -> LispToken {
+        LispToken {
+            value: LispTokenType::EmptyCons,
+            quoted: false
+        }
+    }
+
+    pub fn new_solo<'a>(name: &'a String, token_type: ParseTokenType, line: u16) -> LispToken {
+        LispToken {
+            value: LispTokenType::SoloEle(name.to_owned(), token_type, line),
+            quoted: false,
+        }
+    }
+
+    pub fn new(_type: u8) -> LispToken {
         use self::LispTokenType::*;
 
         let child_value = match _type {
             0 => EmptyCons,
             1 => ArguType(0),
-            2 => Cons(HashMap::new(), HashMap::new(), Vec::new()),
-            3 => Property(HashMap::new(), HashMap::new(), Vec::new()),
+            2 => Cons(Vec::new()),
+            3 => Property(Vec::new()),
             _ => panic!("The type of token's value is error!")
         };
 
         LispToken {
             value: child_value,
-            quoted: false,
-            line: line_num
+            quoted: false
         }
     }
 
     fn get_length(&self) -> u8 {
-        match self.value {
-            LispTokenType::Cons(item1, item2, _) | LispTokenType::Property(item1, item2, _) => {
-                (item1.len() + item2.len()).try_into().unwrap()
+        match &self.value {
+            LispTokenType::Cons(item) | LispTokenType::Property(item) => {
+                item.len().try_into().unwrap()
             },
             _ => panic!("Failed to get the length of a item which has no child elements!")
         }
@@ -81,33 +98,38 @@ impl<'a> LispToken<'a> {
         self.quoted = true;
     }
 
-    /// Change current Cons to EmptyCons.
-    pub fn cons_to_empty(&mut self) {
-        self.value = LispTokenType::EmptyCons;
-    }
-
     /// Append `_value_str` or `_value_token` into the value of `LispToken`.
     /// When `starts_new_line` is true, add it into the Vector which is used to represent the newline
-    pub fn append_element(&mut self, _value_str: (&'a str, ParseTokenType), _value_token: LispTokens<'a>, starts_new_line: bool) -> Result<(), ()> {
-        match self.value {
-            LispTokenType::Cons(ref mut item1, ref mut item2, ref mut item3)|
-            LispTokenType::Property(ref mut item1, ref mut item2, ref mut item3) => {
-                let new_index = self.get_length();
+    pub fn append_element(&mut self, _value_str: Option<(String, ParseTokenType, u16)>, _value_token: Option<LispToken>) -> Result<(), ()> {
+        let new_index = self.get_length();
+        match &mut self.value {
+            LispTokenType::Cons(ref mut item) | LispTokenType::Property(ref mut item) => {
                 match _value_token {
-                    LispTokens::EmptyToken => {
-                        item1.insert(new_index + 1, _value_str);
+                    None => {
+                        if let Some((v, t, l)) = _value_str {
+                            item.push(Box::new(LispToken::new_solo(&v, t, l)));
+                        }
                     },
-                    LispTokens::Tokens(t) => {
-                        item2.insert(new_index + 1, Box::new(t[0]));
+                    Some(t) => {
+                        item.push(Box::new(t));
                     }
                 }
-                if starts_new_line {
-                    item3.push(new_index);
-                }
+
                 Ok(())
             },
 
             _ => Err(())
+        }
+    }
+
+    pub fn get_element(&self, index: usize) -> &Box<LispToken> {
+        match &self.value {
+            LispTokenType::Cons(ref item) |
+            LispTokenType::Property(ref item) => {
+                item.get(index).unwrap()
+            },
+
+            _ => panic!("Error in getting element of LispToken.")
         }
     }
 }
