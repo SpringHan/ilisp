@@ -1,5 +1,4 @@
-// The file for the things about eval.
-
+// Life time module.
 // Copyright (c) 2022 SpringHan
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,8 +19,36 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
 // OR OTHER DEALINGS IN THE SOFTWARE.
 
-pub mod token;
-pub mod env;
-pub mod module;
-pub mod parse;
-pub mod lifetime;
+use std::collections::HashMap;
+
+static LISP_LIFETIME: Vec<Vec<LispLifetime>> = Vec::new();
+
+pub struct LispLifetime {
+    independent: Option<String>,
+    child_thread: Vec<usize>,
+    value: HashMap<(String, bool), super::env::LispType>
+}
+
+impl LispLifetime {
+    /// Init the main Lifetime for a certain module.
+    pub fn init(module: &String) {
+        unsafe {
+            LISP_LIFETIME.push(Vec::new());
+            LISP_LIFETIME.get_mut(0).unwrap().push(LispLifetime {
+                independent: Some(module.to_string()),
+                child_thread: Vec::new(),
+                value: HashMap::new()
+            });
+        }
+    }
+
+    pub fn new_child(lifetime: usize) {
+        unsafe {
+            LISP_LIFETIME.get_mut(lifetime).unwrap().push(LispLifetime {
+                independent: None,
+                child_thread: Vec::new(),
+                value: HashMap::new()
+            })
+        }
+    }
+}
